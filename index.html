@@ -118,9 +118,22 @@
     .error { margin-top: 14px; color: var(--danger); white-space: pre-wrap; font-size: 0.92rem; line-height: 1.45; }
 
     /* ---- landing ---- */
-    .landing { max-width: 900px; margin: 0 auto; padding: 12vh 20px 64px; text-align: center; }
-    .landing h1 { font-size: 2.1rem; margin-bottom: 6px; }
-    .landing > p { margin-bottom: 36px; }
+    .landing { max-width: 820px; margin: 0 auto; padding: 40px 20px 64px; }
+    .landing-top { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 14px; }
+    .eyebrow { color: var(--accent); font-weight: 800; letter-spacing: 0.04em; }
+    .lang-switch { display: inline-flex; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+    .lang-switch button { border: 0; border-radius: 0; padding: 7px 14px; font-size: 0.85rem; background: var(--panel-2); color: var(--muted); }
+    .lang-switch button:hover:not(:disabled) { transform: none; color: var(--text); }
+    .lang-switch button[aria-pressed="true"] { background: var(--accent); color: var(--accent-text); }
+
+    .consent { margin-bottom: 20px; }
+    .consent h1 { font-size: 1.6rem; line-height: 1.35; margin-bottom: 10px; }
+    .consent .lead { color: var(--text); margin-bottom: 14px; }
+    .consent ul { margin: 0 0 14px; padding-left: 1.2em; color: var(--muted); font-size: 0.93rem; }
+    .consent li { margin: 4px 0; }
+    .consent .fine { font-size: 0.85rem; margin: 0 0 4px; }
+    .consent .agree { color: var(--text); font-weight: 700; margin: 16px 0 0; }
+
     .choices { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; text-align: left; }
     .choice {
       display: flex;
@@ -252,7 +265,8 @@
       .card { padding: 20px; }
       .page { padding: 20px 14px 48px; }
       .image-wrap { height: 40vh; }
-      .landing { padding-top: 8vh; }
+      .landing { padding-top: 24px; }
+      .consent h1 { font-size: 1.3rem; }
     }
   </style>
 </head>
@@ -263,8 +277,44 @@
 <!-- ===================================================================== -->
 <div id="homeView" class="hidden">
   <div class="landing">
-    <h1>MPI × Kansei</h1>
-    <p>イメージと言葉の連想ワークショップ · <span class="en">Image Word Association Workshop</span></p>
+    <div class="landing-top">
+      <div class="eyebrow">MPI × Kansei</div>
+      <div class="lang-switch">
+        <button type="button" data-lang="ja" aria-pressed="true">日本語</button>
+        <button type="button" data-lang="en" aria-pressed="false">English</button>
+      </div>
+    </div>
+
+    <!-- Study information / consent. TODO before going live: approval number and emails. -->
+    <section class="card consent" lang="ja" data-lang="ja">
+      <h1>性格と画像の第一印象に関する調査</h1>
+      <p class="lead">本研究は、画像を見て最初に思い浮かぶ言葉と性格との関係を調べるものです。</p>
+      <ul>
+        <li>年齢・性別の入力、性格検査（MPI）、9枚の画像それぞれについて3語の入力を行います（所要時間：約10分）。</li>
+        <li>18歳以上の方が対象です。参加は任意で、謝礼はありません。</li>
+        <li>すべての質問への回答が必要です。ページを閉じればいつでも中止でき、その場合データは保存されません。</li>
+        <li>氏名や連絡先は収集しません。回答は匿名のため、送信後に取り消すことはできません。</li>
+        <li>匿名化された結果は研究・論文発表に使用されます。</li>
+      </ul>
+      <p class="fine">筑波大学 図書館情報メディア系 研究倫理審査委員会承認済み（承認番号：____）</p>
+      <p class="fine">連絡先：Alvin Agung Ismail（s2526098@u.tsukuba.ac.jp）、指導教員：李 昇姫 准教授（）</p>
+      <p class="agree">「参加する」をクリックすると、本研究への参加に同意したものとみなします。</p>
+    </section>
+
+    <section class="card consent hidden" lang="en" data-lang="en">
+      <h1>Survey on Personality and Immediate Impressions of Images</h1>
+      <p class="lead">This study looks at whether the words people first think of when seeing an image relate to their personality.</p>
+      <ul>
+        <li>You will answer your age and gender, take a personality test (MPI), and type 3 words for each of 9 images. This takes about 10 minutes.</li>
+        <li>You must be 18 or older. Taking part is voluntary and unpaid.</li>
+        <li>Every question must be answered to continue. You can quit at any time by closing this page, and nothing will be saved.</li>
+        <li>No names or contact details are collected. Because responses are anonymous, they cannot be withdrawn once you submit.</li>
+        <li>Anonymous results will be used for research and publications.</li>
+      </ul>
+      <p class="fine">Approved by the Institute of Library, Information and Media Science Research Ethics Review Committee, University of Tsukuba (No. ____).</p>
+      <p class="fine">Contact: Alvin Agung Ismail ([email]), Supervisor: Assoc. Prof. SeungHee Lee</p>
+      <p class="agree">By clicking Take part, you agree to participate.</p>
+    </section>
 
     <div class="choices">
       <button class="choice primary" id="goRunBtn">
@@ -295,7 +345,7 @@
     <div class="grid">
       <div>
         <label for="age">年齢 <span class="en">Age</span></label>
-        <input id="age" type="number" inputmode="numeric" min="1" max="120" step="1" autocomplete="off" />
+        <input id="age" type="number" inputmode="numeric" min="18" max="120" step="1" autocomplete="off" />
       </div>
       <div>
         <label for="gender">性別 <span class="en">Gender</span></label>
@@ -609,8 +659,14 @@ function startRunner() {
 }
 
 // ---- step 0: demographics ----
+const MIN_AGE = 18;   // stated in the consent text on the landing page
+
 function validateDemo() {
-  const age = parseIntInRange($("age").value, 1, 120);
+  const age = parseIntInRange($("age").value, MIN_AGE, 120);
+  const underage = parseIntInRange($("age").value, 1, MIN_AGE - 1) !== null;
+  $("demoError").textContent = underage
+    ? "本調査は18歳以上の方が対象です。 · You must be 18 or older to take part."
+    : "";
   const gender = $("gender").value;
   $("demoNextBtn").disabled = !(age !== null && gender);
   return age !== null && gender ? { age, gender } : null;
@@ -1038,6 +1094,16 @@ function renderPlot() {
 
   Plotly.react("plot", [trace], layout, { responsive: true, displayModeBar: false });
 }
+
+// =========================================================================
+// Landing: study information language
+// =========================================================================
+function setLang(lang) {
+  document.querySelectorAll(".consent").forEach((el) => el.classList.toggle("hidden", el.dataset.lang !== lang));
+  document.querySelectorAll(".lang-switch button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.lang === lang)));
+}
+document.querySelectorAll(".lang-switch button").forEach((b) => b.addEventListener("click", () => setLang(b.dataset.lang)));
+setLang((navigator.language || "").startsWith("ja") ? "ja" : "en");
 
 // =========================================================================
 // Init
