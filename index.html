@@ -1,0 +1,1090 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MPI × Kansei</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --background: #0b0f14;
+      --panel: #151b23;
+      --panel-2: #0d1218;
+      --border: #303946;
+      --text: #f4f7fb;
+      --muted: #9ba8b7;
+      --accent: #70b7ff;
+      --accent-text: #07111c;
+      --danger: #ff7474;
+      --ok: #7ee0a1;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--background);
+      color: var(--text);
+      font-family: Inter, "Noto Sans JP", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Sans", "Yu Gothic UI", sans-serif;
+      line-height: 1.5;
+    }
+
+    .hidden { display: none !important; }
+
+    .page { max-width: 860px; margin: 0 auto; padding: 32px 20px 64px; }
+    body.wide .page { max-width: 1100px; }
+
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 28px;
+      box-shadow: 0 18px 50px rgba(0, 0, 0, 0.28);
+    }
+
+    h1 { margin: 0 0 8px; font-size: 1.5rem; }
+    h2 { margin: 0 0 14px; font-size: 1.15rem; }
+    p { margin: 0 0 16px; color: var(--muted); }
+    .en { color: var(--muted); font-weight: 500; }
+
+    .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+    .grid-3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+
+    label { display: block; font-weight: 700; font-size: 0.9rem; margin-bottom: 6px; }
+    label .range { color: var(--muted); font-weight: 500; }
+
+    select, input:not([type="checkbox"]) {
+      width: 100%;
+      padding: 11px 12px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      font: inherit;
+      background: var(--panel-2);
+      color: var(--text);
+    }
+    input[readonly] { opacity: 0.8; border-color: var(--ok); }
+    select:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+    button {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px 18px;
+      background: var(--panel);
+      color: var(--text);
+      font-family: inherit;
+      font-weight: 700;
+      font-size: 1rem;
+      line-height: 1.2;
+      cursor: pointer;
+      transition: transform 120ms ease, opacity 120ms ease, border-color 120ms ease;
+    }
+    button:hover:not(:disabled) { transform: translateY(-1px); border-color: var(--accent); }
+    button:active:not(:disabled) { transform: translateY(0); }
+    button:disabled { cursor: not-allowed; opacity: 0.45; }
+    button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+    .primary { background: var(--accent); border-color: var(--accent); color: var(--accent-text); }
+    .link-btn { background: none; border-color: transparent; color: var(--muted); padding: 8px 10px; font-size: 0.9rem; }
+    .link-btn:hover:not(:disabled) { color: var(--text); }
+
+    .row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 22px; align-items: center; }
+
+    .meta { color: var(--muted); font-size: 0.95rem; font-weight: 700; margin-bottom: 12px; }
+
+    .progress-wrap {
+      height: 8px;
+      background: var(--panel-2);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      overflow: hidden;
+      margin-bottom: 20px;
+    }
+    .progress { height: 100%; width: 0%; background: var(--accent); transition: width 0.2s ease; }
+
+    .notice {
+      margin-top: 16px;
+      padding: 13px 15px;
+      background: var(--panel-2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      color: var(--muted);
+      font-size: 0.92rem;
+      line-height: 1.5;
+    }
+    .notice.ok { border-color: var(--ok); color: var(--ok); }
+
+    #submitText { white-space: pre-line; }
+
+    .error { margin-top: 14px; color: var(--danger); white-space: pre-wrap; font-size: 0.92rem; line-height: 1.45; }
+
+    /* ---- landing ---- */
+    .landing { max-width: 900px; margin: 0 auto; padding: 12vh 20px 64px; text-align: center; }
+    .landing h1 { font-size: 2.1rem; margin-bottom: 6px; }
+    .landing > p { margin-bottom: 36px; }
+    .choices { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; text-align: left; }
+    .choice {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding: 28px;
+      border-radius: 16px;
+      background: var(--panel);
+      box-shadow: 0 18px 50px rgba(0, 0, 0, 0.28);
+      font-weight: 400;
+      text-align: left;
+    }
+    .choice.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-text); }
+    .choice .big { font-size: 1.4rem; font-weight: 800; }
+    .choice .sub { color: var(--muted); font-size: 0.95rem; line-height: 1.5; }
+    .choice.primary .sub { color: var(--accent-text); opacity: 0.8; }
+
+    /* ---- MPI step ---- */
+    .mpi-frame {
+      display: block;
+      width: 100%;
+      height: 70vh;
+      min-height: 480px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: #fff;
+      margin: 8px 0 20px;
+    }
+
+    /* ---- instructions ---- */
+    .instructions { display: grid; gap: 16px; }
+    .instructions section {
+      background: var(--panel-2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px 20px;
+    }
+    .instructions .tag { font-size: 0.8rem; font-weight: 800; color: var(--accent); margin-bottom: 6px; }
+    .instructions ul { margin: 8px 0; padding-left: 1.3em; }
+    .instructions li { margin: 4px 0; }
+    .instructions p { color: var(--text); margin: 0; }
+
+    /* ---- image step ---- */
+    .image-wrap {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: var(--panel-2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px;
+      height: 55vh;
+      min-height: 280px;
+      margin-bottom: 20px;
+    }
+    .image-wrap img { max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 6px; }
+
+    /* ---- results view (full viewport) ---- */
+    #resultsView { height: 100vh; height: 100dvh; display: flex; flex-direction: column; }
+    #resultsView header {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      flex-wrap: wrap;
+      padding: 12px 20px;
+      border-bottom: 1px solid var(--border);
+    }
+    #resultsView header h1 { margin: 0; font-size: 1.2rem; }
+    #resultsView header button { padding: 8px 14px; font-size: 0.9rem; border-radius: 10px; }
+    #resultsView header .error { margin: 0; }
+    .status { color: var(--muted); font-size: 0.9rem; font-weight: 600; }
+    .status .count { color: var(--text); font-size: 1.05rem; }
+    .spacer { flex: 1; }
+    label.toggle { display: flex; gap: 6px; align-items: center; color: var(--muted); font-size: 0.9rem; font-weight: 500; margin: 0; cursor: pointer; }
+
+    .thumbs {
+      display: flex;
+      gap: 10px;
+      padding: 12px 20px;
+      overflow-x: auto;
+      border-bottom: 1px solid var(--border);
+    }
+    .thumb {
+      flex: 0 0 auto;
+      padding: 0;
+      width: 110px;
+      border: 2px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+      background: var(--panel-2);
+      position: relative;
+    }
+    .thumb img { display: block; width: 100%; height: 70px; object-fit: cover; }
+    .thumb span {
+      position: absolute; left: 4px; top: 4px;
+      background: rgba(0, 0, 0, 0.7); border-radius: 6px;
+      padding: 1px 6px; font-size: 0.8rem;
+    }
+    .thumb.active { border-color: var(--accent); }
+
+    .results-main {
+      flex: 1;
+      min-height: 0;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1.6fr);
+      gap: 16px;
+      padding: 16px 20px 20px;
+    }
+    .results-stimulus {
+      display: flex; align-items: center; justify-content: center;
+      background: var(--panel-2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px;
+      min-height: 0;
+    }
+    .results-stimulus img { max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 6px; }
+    #plot { background: #fff; border-radius: 12px; min-height: 420px; }
+
+    @media (max-width: 900px) {
+      #resultsView { height: auto; min-height: 100vh; }
+      .results-main { grid-template-columns: 1fr; }
+      .results-stimulus { max-height: 35vh; }
+      #plot { min-height: 70vh; }
+    }
+
+    @media (max-width: 650px) {
+      .grid, .grid-3, .choices { grid-template-columns: 1fr; }
+      .card { padding: 20px; }
+      .page { padding: 20px 14px 48px; }
+      .image-wrap { height: 40vh; }
+      .landing { padding-top: 8vh; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ===================================================================== -->
+<!-- Landing                                                               -->
+<!-- ===================================================================== -->
+<div id="homeView" class="hidden">
+  <div class="landing">
+    <h1>MPI × Kansei</h1>
+    <p>イメージと言葉の連想ワークショップ · <span class="en">Image Word Association Workshop</span></p>
+
+    <div class="choices">
+      <button class="choice primary" id="goRunBtn">
+        <span class="big">参加する · Take part</span>
+        <span class="sub">MPI テストと画像の連想に回答します。<br>Take the MPI test and the image word association.</span>
+      </button>
+      <button class="choice" id="goResultsBtn">
+        <span class="big">結果を見る · Live results</span>
+        <span class="sub">全員の回答を E/N グリッド上に表示します。<br>See everyone's words on the E/N grid.</span>
+      </button>
+    </div>
+
+    <div id="homeError" class="error"></div>
+  </div>
+</div>
+
+<!-- ===================================================================== -->
+<!-- Runner                                                                -->
+<!-- ===================================================================== -->
+<div id="runView" class="hidden">
+<div class="page">
+
+  <!-- 0. Demographics -->
+  <section id="demoCard" class="card">
+    <h1>MPI × Kansei <span class="en">Session</span></h1>
+    <p>はじめに、年齢と性別を入力してください。<br><span class="en">To begin, please enter your age and gender.</span></p>
+
+    <div class="grid">
+      <div>
+        <label for="age">年齢 <span class="en">Age</span></label>
+        <input id="age" type="number" inputmode="numeric" min="1" max="120" step="1" autocomplete="off" />
+      </div>
+      <div>
+        <label for="gender">性別 <span class="en">Gender</span></label>
+        <select id="gender">
+          <option value="" selected disabled>— 選択 / Select —</option>
+          <option value="female">女性 / Female</option>
+          <option value="male">男性 / Male</option>
+          <option value="other">その他 / Other</option>
+          <option value="no_answer">回答しない / Prefer not to say</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="row">
+      <button class="primary" id="demoNextBtn" disabled>次へ / Next</button>
+      <button class="link-btn" id="demoHomeBtn">← ホーム / Home</button>
+    </div>
+    <div id="demoError" class="error"></div>
+  </section>
+
+  <!-- 1. MPI test (embedded) -->
+  <section id="mpiCard" class="card hidden">
+    <div class="meta">ステップ 1 / 2 · Step 1 of 2</div>
+    <h1>MPI テスト <span class="en">MPI Test</span></h1>
+    <p>
+      下のすべての質問に回答し、送信してください。結果が表示されたら、E・N・L のスコアを下の欄に入力してください。<br>
+      <span class="en">Answer every question below and submit. When your results appear, enter your E, N and L scores in the boxes underneath.</span>
+    </p>
+
+    <iframe id="mpiFrame" class="mpi-frame" title="MPI test"></iframe>
+
+    <h2>あなたの結果 <span class="en">Your results</span></h2>
+    <div class="grid-3">
+      <div>
+        <label for="scoreE">E スコア <span class="range">(0–48)</span></label>
+        <input id="scoreE" type="number" inputmode="numeric" min="0" max="48" step="1" autocomplete="off" />
+      </div>
+      <div>
+        <label for="scoreN">N スコア <span class="range">(0–48)</span></label>
+        <input id="scoreN" type="number" inputmode="numeric" min="0" max="48" step="1" autocomplete="off" />
+      </div>
+      <div>
+        <label for="scoreL">L スコア <span class="range">(0–24)</span></label>
+        <input id="scoreL" type="number" inputmode="numeric" min="0" max="24" step="1" autocomplete="off" />
+      </div>
+    </div>
+
+    <div id="mpiAutoNotice" class="notice ok hidden">
+      スコアを自動で取得しました。 · Scores were captured automatically.
+    </div>
+
+    <div class="row">
+      <button class="primary" id="mpiNextBtn" disabled>次へ / Next</button>
+    </div>
+    <div id="mpiError" class="error"></div>
+  </section>
+
+  <!-- 2. Instructions -->
+  <section id="instructionsCard" class="card hidden">
+    <div class="meta">ステップ 2 / 2 · Step 2 of 2</div>
+    <h1>イメージと言葉の連想 <span class="en">| Image Word Association</span></h1>
+
+    <div class="instructions">
+      <section lang="ja">
+        <div class="tag">JP</div>
+        <p>これから、いくつかの画像が1枚ずつ表示されます。各画像について、次のことを行ってください：</p>
+        <ul>
+          <li>画像を見て、最初に思い浮かんだ印象を3つほど書いてください。</li>
+          <li>各画像について20秒以内に答えてください。</li>
+          <li>思いついた順番で入力してください。深く考えすぎないでください。</li>
+        </ul>
+        <p>正解・不正解はありません。これはあなたの第一印象や直感的な反応を知るためのものです。</p>
+      </section>
+
+      <section lang="en">
+        <div class="tag">EN</div>
+        <p>You will be shown a series of images, one at a time. For each image, please do the following:</p>
+        <ul>
+          <li>Please write three words that immediately come to mind when you see the image.</li>
+          <li>You will have 20 seconds to respond to each image.</li>
+          <li>Enter your thoughts in the order they occur — do not overthink your responses.</li>
+        </ul>
+        <p>There are no wrong answers. This is about your first impressions and instinctive reactions.</p>
+      </section>
+    </div>
+
+    <div class="row">
+      <button class="primary" id="beginImagesBtn">開始 / Start</button>
+    </div>
+  </section>
+
+  <!-- 3. Image word association -->
+  <section id="imageCard" class="card hidden">
+    <div id="imageMeta" class="meta"></div>
+    <div class="progress-wrap"><div id="progress" class="progress"></div></div>
+
+    <div class="image-wrap"><img id="stimulus" alt="" /></div>
+
+    <div id="wordInputs" class="grid-3"></div>
+
+    <div class="row">
+      <button class="primary" id="imageNextBtn" disabled>次へ / Next</button>
+    </div>
+  </section>
+
+  <!-- 4. Submit -->
+  <section id="submitCard" class="card hidden">
+    <h1>完了しました <span class="en">All done</span></h1>
+    <p id="submitText"></p>
+
+    <div class="row">
+      <button class="primary" id="submitBtn">送信 / Submit</button>
+    </div>
+    <div class="row hidden" id="afterSubmitRow">
+      <button class="primary" id="seeResultsBtn">結果を見る / See results</button>
+      <button id="backHomeBtn">ホームに戻る / Back to home</button>
+    </div>
+    <div id="submitError" class="error"></div>
+  </section>
+
+</div>
+</div>
+
+<!-- ===================================================================== -->
+<!-- Live results                                                          -->
+<!-- ===================================================================== -->
+<div id="resultsView" class="hidden">
+  <header>
+    <button id="resultsHomeBtn">← ホーム / Home</button>
+    <h1>Live Results</h1>
+    <div class="status"><span class="count" id="count">–</span> 人 / participants</div>
+    <div class="status" id="updated"></div>
+    <div class="error" id="resultsError"></div>
+    <div class="spacer"></div>
+    <label class="toggle"><input type="checkbox" id="autoRefresh" checked /> 自動更新 / Auto-refresh</label>
+    <button id="refreshBtn">更新 / Refresh</button>
+  </header>
+
+  <nav class="thumbs" id="thumbs"></nav>
+
+  <div class="results-main">
+    <div class="results-stimulus"><img id="resultsStimulus" alt="" /></div>
+    <div id="plot"></div>
+  </div>
+</div>
+
+<script>
+"use strict";
+
+// =========================================================================
+// Shared
+// =========================================================================
+// All deployment settings live in config.json (collect_url, mpi_url, images…).
+const DEFAULT_CONFIG = {
+  collect_url: "",
+  collect_token: "",
+  mpi_url: "https://mpfranco10.github.io/mpikansei/",
+  words_per_image: 3,
+  results_refresh_seconds: 15,
+  images: []
+};
+const PLOTLY_SRC = "https://cdn.plot.ly/plotly-2.35.2.min.js";
+
+let config = { ...DEFAULT_CONFIG };
+let configOk = false;
+
+const $ = (id) => document.getElementById(id);
+const params = new URLSearchParams(location.search);
+
+async function loadConfig() {
+  try {
+    const res = await fetch("config.json", { cache: "no-store" });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    config = { ...DEFAULT_CONFIG, ...(await res.json()) };
+  } catch (err) {
+    return `config.json could not be loaded (${err.message}).\n` +
+      "Serve this folder over HTTP (e.g. `python -m http.server`) instead of opening the file directly.";
+  }
+  if (!Array.isArray(config.images) || config.images.length === 0) return "config.json has no images listed.";
+  try {
+    mpiOrigin = new URL(config.mpi_url).origin;
+  } catch (_) {
+    return "config.json has an invalid mpi_url.";
+  }
+  return null;
+}
+
+// =========================================================================
+// Routing:  #  → landing,  #run → runner,  #results[/N] → live results
+// =========================================================================
+let currentView = null;
+
+function parseHash() {
+  const h = location.hash.replace(/^#\/?/, "");
+  if (h === "run") return { view: "run" };
+  const m = h.match(/^results(?:\/(\d+))?$/);
+  if (m) return { view: "results", image: m[1] ? Number(m[1]) - 1 : null };
+  return { view: "home" };
+}
+
+function go(hash) {
+  if (location.hash === hash || (hash === "#" && !location.hash)) route();
+  else location.hash = hash;
+}
+
+function route() {
+  const target = parseHash();
+
+  // Leaving the runner mid-session (e.g. the browser Back button) loses the
+  // answers, so ask first.
+  // Restoring "#run" re-enters route() with currentView still "run", so the
+  // session is kept rather than restarted.
+  if (currentView === "run" && target.view !== "run" && state && state.inProgress) {
+    if (!confirm("回答は保存されていません。終了しますか？\nYour answers have not been submitted. Leave anyway?")) {
+      location.hash = "#run";
+      return;
+    }
+    state.inProgress = false;
+  }
+
+  const previous = currentView;
+  currentView = target.view;
+  $("homeView").classList.toggle("hidden", target.view !== "home");
+  $("runView").classList.toggle("hidden", target.view !== "run");
+  $("resultsView").classList.toggle("hidden", target.view !== "results");
+  document.title = { home: "MPI × Kansei", run: "MPI × Kansei — Session", results: "MPI × Kansei — Live Results" }[target.view];
+
+  if (previous === "results" && target.view !== "results") stopResults();
+  if (!configOk) return;
+
+  if (target.view === "run" && previous !== "run") startRunner();
+  if (target.view === "results") startResults(target.image, previous !== "results");
+  window.scrollTo(0, 0);
+}
+
+window.addEventListener("hashchange", route);
+
+// =========================================================================
+// Runner
+// =========================================================================
+const SCORE_LIMITS = { e: 48, n: 48, l: 24 };
+const WORD_MAX_LENGTH = 40;
+const SUBMIT_PROMPT =
+  "「送信」を押して回答を送ってください。\nPress Submit to send your responses.";
+
+let mpiOrigin = null;
+let state = null;
+let imagesPreloaded = false;
+
+function freshState() {
+  return {
+    sessionId: makeSessionId(),
+    age: null,
+    gender: null,
+    mpi: { e: null, n: null, l: null, source: "manual" },
+    responses: [],
+    index: 0,
+    startedAt: null,
+    imageStartAt: null,
+    inProgress: false,
+    submitted: false
+  };
+}
+
+function makeSessionId() {
+  const bytes = crypto.getRandomValues(new Uint8Array(5));
+  return [...bytes].map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+function showStep(cardId) {
+  for (const id of ["demoCard", "mpiCard", "instructionsCard", "imageCard", "submitCard"]) {
+    $(id).classList.toggle("hidden", id !== cardId);
+  }
+  document.body.classList.toggle("wide", cardId === "mpiCard");
+  window.scrollTo(0, 0);
+}
+
+function parseIntInRange(raw, min, max) {
+  const s = String(raw).trim();
+  if (!/^\d+$/.test(s)) return null;
+  const v = Number(s);
+  return v >= min && v <= max ? v : null;
+}
+
+// Every visit to #run starts a fresh session.
+function startRunner() {
+  state = freshState();
+  $("age").value = "";
+  $("gender").value = "";
+  for (const id of ["scoreE", "scoreN", "scoreL"]) {
+    $(id).value = "";
+    $(id).readOnly = false;
+  }
+  $("mpiFrame").removeAttribute("src");
+  $("mpiAutoNotice").classList.add("hidden");
+  for (const id of ["demoError", "mpiError", "submitError"]) $(id).textContent = "";
+  $("submitText").textContent = SUBMIT_PROMPT;
+  $("submitBtn").disabled = false;
+  $("submitBtn").textContent = "送信 / Submit";
+  $("submitBtn").classList.remove("hidden");
+  $("afterSubmitRow").classList.add("hidden");
+  $("progress").style.width = "0%";
+  if (!imagesPreloaded) {
+    for (const src of config.images) new Image().src = src;
+    imagesPreloaded = true;
+  }
+  validateDemo();
+  validateScores();
+  showStep("demoCard");
+  $("age").focus();
+}
+
+// ---- step 0: demographics ----
+function validateDemo() {
+  const age = parseIntInRange($("age").value, 1, 120);
+  const gender = $("gender").value;
+  $("demoNextBtn").disabled = !(age !== null && gender);
+  return age !== null && gender ? { age, gender } : null;
+}
+
+function submitDemo() {
+  const d = validateDemo();
+  if (!d) {
+    $("demoError").textContent = "年齢と性別を入力してください。 · Please enter your age and gender.";
+    return;
+  }
+  $("demoError").textContent = "";
+  state.age = d.age;
+  state.gender = d.gender;
+  state.startedAt = new Date().toISOString();
+  state.inProgress = true;
+
+  // Load the MPI test fresh for every participant.
+  $("mpiFrame").src = config.mpi_url;
+  showStep("mpiCard");
+}
+
+// ---- step 1: MPI ----
+function readScores() {
+  const e = parseIntInRange($("scoreE").value, 0, SCORE_LIMITS.e);
+  const n = parseIntInRange($("scoreN").value, 0, SCORE_LIMITS.n);
+  const l = parseIntInRange($("scoreL").value, 0, SCORE_LIMITS.l);
+  return e !== null && n !== null && l !== null ? { e, n, l } : null;
+}
+
+function validateScores() {
+  const ok = readScores() !== null;
+  $("mpiNextBtn").disabled = !ok;
+  return ok;
+}
+
+// If the MPI site posts its result to the parent page, fill the scores in
+// automatically. Expected message (sent from the MPI page):
+//   window.parent.postMessage({ type: "mpi-result", e, n, l }, "*");
+window.addEventListener("message", (event) => {
+  if (!state || !mpiOrigin || event.origin !== mpiOrigin) return;
+  if (currentView !== "run" || $("mpiCard").classList.contains("hidden")) return;
+  const d = event.data;
+  if (!d || d.type !== "mpi-result") return;
+
+  const fields = [["scoreE", d.e, SCORE_LIMITS.e], ["scoreN", d.n, SCORE_LIMITS.n], ["scoreL", d.l, SCORE_LIMITS.l]];
+  if (!fields.every(([, v, max]) => parseIntInRange(v, 0, max) !== null)) return;
+
+  for (const [id, v] of fields) {
+    $(id).value = String(v);
+    $(id).readOnly = true;
+  }
+  state.mpi.source = "auto";
+  $("mpiAutoNotice").classList.remove("hidden");
+  validateScores();
+});
+
+function submitScores() {
+  const scores = readScores();
+  if (!scores) {
+    $("mpiError").textContent =
+      "スコアを正しく入力してください（E・N は 0–48、L は 0–24）。\nPlease enter valid scores (E and N: 0–48, L: 0–24).";
+    return;
+  }
+  $("mpiError").textContent = "";
+  Object.assign(state.mpi, scores);
+  showStep("instructionsCard");
+}
+
+// ---- step 2: image word association ----
+function buildWordInputs() {
+  const box = $("wordInputs");
+  box.replaceChildren();
+  for (let i = 0; i < config.words_per_image; i++) {
+    const wrap = document.createElement("div");
+    const label = document.createElement("label");
+    label.htmlFor = `word${i}`;
+    label.textContent = `言葉 ${i + 1} / Word ${i + 1}`;
+    const input = document.createElement("input");
+    input.id = `word${i}`;
+    input.type = "text";
+    input.maxLength = WORD_MAX_LENGTH;
+    input.autocomplete = "off";
+    input.spellcheck = false;
+    input.addEventListener("input", validateWords);
+    input.addEventListener("keydown", (ev) => onWordKeydown(ev, i));
+    wrap.append(label, input);
+    box.appendChild(wrap);
+  }
+}
+
+function wordInputs() {
+  return [...$("wordInputs").querySelectorAll("input")];
+}
+
+function readWords() {
+  return wordInputs().map((input) => input.value.trim().replace(/\s+/g, " "));
+}
+
+function validateWords() {
+  const ok = readWords().every((w) => w.length > 0);
+  $("imageNextBtn").disabled = !ok;
+  return ok;
+}
+
+// Enter moves to the next empty box, or advances once all boxes are filled.
+function onWordKeydown(ev, i) {
+  if (ev.key !== "Enter" || ev.isComposing) return;
+  ev.preventDefault();
+  if (validateWords()) {
+    nextImage();
+    return;
+  }
+  const inputs = wordInputs();
+  const next = inputs.find((input, j) => j > i && !input.value.trim()) ||
+               inputs.find((input) => !input.value.trim());
+  if (next) next.focus();
+}
+
+function startImages() {
+  state.index = 0;
+  state.responses = [];
+  buildWordInputs();
+  showStep("imageCard");
+  renderImage();
+}
+
+function renderImage() {
+  const total = config.images.length;
+  const i = state.index;
+  $("imageMeta").textContent = `画像 ${i + 1} / ${total} · Image ${i + 1} of ${total}`;
+  $("progress").style.width = `${(i / total) * 100}%`;
+  $("stimulus").src = config.images[i];
+  $("stimulus").alt = `Image ${i + 1}`;
+
+  for (const input of wordInputs()) input.value = "";
+  validateWords();
+  wordInputs()[0].focus();
+  state.imageStartAt = Date.now();
+}
+
+function nextImage() {
+  if (!validateWords()) return;
+  $("imageNextBtn").disabled = true; // guard against double clicks
+
+  state.responses.push({
+    index: state.index + 1,
+    image: config.images[state.index],
+    words: readWords(),
+    time_ms: Date.now() - state.imageStartAt
+  });
+
+  state.index++;
+  if (state.index < config.images.length) {
+    renderImage();
+  } else {
+    $("progress").style.width = "100%";
+    showStep("submitCard");
+  }
+}
+
+// ---- step 3: submit ----
+function buildPayload() {
+  const finishedAt = new Date().toISOString();
+  return {
+    format: "mpi-kansei-response",
+    v: 1,
+    session_id: state.sessionId,
+    age: state.age,
+    gender: state.gender,
+    mpi: { ...state.mpi },
+    started_at: state.startedAt,
+    finished_at: finishedAt,
+    duration_ms: Date.parse(finishedAt) - Date.parse(state.startedAt),
+    n_images: state.responses.length,
+    responses: state.responses
+  };
+}
+
+async function uploadPayload(payload) {
+  const body = config.collect_token ? { ...payload, token: config.collect_token } : payload;
+  const res = await fetch(config.collect_url, {
+    method: "POST",
+    // text/plain keeps this a "simple" CORS request (no preflight), which
+    // Google Apps Script web apps accept.
+    headers: { "Content-Type": "text/plain;charset=utf-8" },
+    body: JSON.stringify(body),
+    redirect: "follow"
+  });
+  if (!res.ok) throw new Error(`server returned HTTP ${res.status}`);
+  const out = await res.json().catch(() => ({}));
+  if (out && out.ok === false) throw new Error(out.error || "server rejected the submission");
+}
+
+function downloadPayload(payload) {
+  const stamp = payload.finished_at.replace(/[:.]/g, "-");
+  const name = `mpi_kansei_${payload.session_id}_${stamp}.json`;
+  const url = URL.createObjectURL(new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" }));
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = name;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+  return name;
+}
+
+async function submitAll() {
+  if (state.submitted) return;
+  const btn = $("submitBtn");
+  btn.disabled = true;
+  btn.textContent = "送信中… / Submitting…";
+  $("submitError").textContent = "";
+
+  const payload = buildPayload();
+
+  if (!config.collect_url) {
+    const name = downloadPayload(payload);
+    finishSubmit(`回答をファイル「${name}」として保存しました。研究者に渡してください。\n` +
+                 `Your responses were saved as "${name}". Please give this file to the researcher.`);
+    return;
+  }
+
+  try {
+    await uploadPayload(payload);
+    finishSubmit("送信しました ✓ ご協力ありがとうございました。\nSubmitted ✓ Thank you for taking part.");
+  } catch (err) {
+    const name = downloadPayload(payload);
+    finishSubmit("");
+    $("submitError").textContent =
+      `サーバーに接続できませんでした (${err.message})。\n` +
+      `代わりにファイル「${name}」をダウンロードしました。研究者に渡してください。\n` +
+      `Could not reach the server. The file "${name}" was downloaded instead — please give it to the researcher.`;
+  }
+}
+
+function finishSubmit(message) {
+  state.submitted = true;
+  state.inProgress = false;
+  $("submitBtn").classList.add("hidden");
+  $("submitText").textContent = message;
+  $("afterSubmitRow").classList.remove("hidden");
+  $("seeResultsBtn").focus();
+}
+
+// =========================================================================
+// Live results
+// =========================================================================
+// Data comes from the Apps Script web app (collect_url?action=results).
+// Open index.html?demo=1#results to preview with generated data.
+const AXIS_MAX = 48;
+const GRID = 16;                              // 3×3 checkerboard, like the MPI site
+const CHECKER = ["#ffe1e1", "#ffffff"];
+const demo = params.has("demo");
+
+let participants = [];
+let selected = 0;
+let refreshTimer = null;
+let thumbsBuilt = false;
+let plotlyPromise = null;
+
+// Plotly is only downloaded when the results view is first opened, so
+// participants on phones don't pay for it.
+function loadPlotly() {
+  if (window.Plotly) return Promise.resolve();
+  if (!plotlyPromise) {
+    plotlyPromise = new Promise((resolve, reject) => {
+      const s = document.createElement("script");
+      s.src = PLOTLY_SRC;
+      s.charset = "utf-8";
+      s.onload = resolve;
+      s.onerror = () => { plotlyPromise = null; reject(new Error("could not load the plotting library")); };
+      document.head.appendChild(s);
+    });
+  }
+  return plotlyPromise;
+}
+
+async function startResults(image, entering) {
+  if (!thumbsBuilt) buildThumbs();
+  select(image ?? selected, !entering);
+  if (!entering) return;
+  try {
+    await loadPlotly();
+  } catch (err) {
+    $("resultsError").textContent = err.message;
+    return;
+  }
+  if (currentView !== "results") return;
+  renderPlot();
+  await refresh();
+  scheduleRefresh();
+}
+
+function stopResults() {
+  clearInterval(refreshTimer);
+  refreshTimer = null;
+}
+
+async function fetchResults() {
+  if (demo) return demoData();
+  if (!config.collect_url) {
+    throw new Error("collect_url is empty in config.json (open index.html?demo=1#results to preview).");
+  }
+  const url = `${config.collect_url}?action=results&t=${Date.now()}`;
+  const res = await fetch(url, { cache: "no-store", redirect: "follow" });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const out = await res.json();
+  if (!out.ok) throw new Error(out.error || "server error");
+  return out.participants || [];
+}
+
+function demoData() {
+  const pool = ["静か", "Calm", "Green", "Light", "Cold", "Metal", "Soft", "Ocean", "Warm",
+                "Dark", "Peaceful", "Nature", "Alien", "Stone", "Glow", "Busy", "Bright", "Old"];
+  const pick = () => pool[Math.floor(Math.random() * pool.length)];
+  const n = 18 + Math.floor(Math.random() * 6);
+  return Array.from({ length: n }, () => ({
+    e: Math.floor(Math.random() * 49),
+    n: Math.floor(Math.random() * 49),
+    words: config.images.map(() => [pick(), pick(), pick()])
+  }));
+}
+
+async function refresh() {
+  try {
+    participants = await fetchResults();
+    $("resultsError").textContent = "";
+    $("count").textContent = participants.length;
+    $("updated").textContent =
+      `最終更新 / Updated ${new Date().toLocaleTimeString()}` + (demo ? "  (demo data)" : "");
+    if (currentView === "results") renderPlot();
+  } catch (err) {
+    $("resultsError").textContent = `Could not load results: ${err.message}`;
+  }
+}
+
+function scheduleRefresh() {
+  stopResults();
+  if ($("autoRefresh").checked && !demo && currentView === "results") {
+    const seconds = Math.max(5, Number(config.results_refresh_seconds) || 15);
+    refreshTimer = setInterval(refresh, seconds * 1000);
+  }
+}
+
+function buildThumbs() {
+  const box = $("thumbs");
+  box.replaceChildren();
+  config.images.forEach((src, i) => {
+    const btn = document.createElement("button");
+    btn.className = "thumb";
+    btn.title = `Image ${i + 1}`;
+    const img = document.createElement("img");
+    img.src = src;
+    img.alt = `Image ${i + 1}`;
+    const tag = document.createElement("span");
+    tag.textContent = i + 1;
+    btn.append(img, tag);
+    btn.addEventListener("click", () => select(i));
+    box.appendChild(btn);
+  });
+  thumbsBuilt = true;
+}
+
+function select(i, draw = true) {
+  const total = config.images.length;
+  selected = ((i % total) + total) % total;
+  // replaceState does not fire hashchange, so this doesn't re-route.
+  history.replaceState(null, "", `${location.pathname}${location.search}#results/${selected + 1}`);
+  [...$("thumbs").children].forEach((el, j) => el.classList.toggle("active", j === selected));
+  $("resultsStimulus").src = config.images[selected];
+  $("resultsStimulus").alt = `Image ${selected + 1}`;
+  if (draw && window.Plotly) renderPlot();
+}
+
+function checkerboard() {
+  const shapes = [];
+  for (let row = 0; row < 3; row++) {
+    for (let col = 0; col < 3; col++) {
+      shapes.push({
+        type: "rect", xref: "x", yref: "y", layer: "below",
+        x0: col * GRID, y0: row * GRID, x1: (col + 1) * GRID, y1: (row + 1) * GRID,
+        fillcolor: CHECKER[(row + col) % 2], line: { width: 0 }
+      });
+    }
+  }
+  return shapes;
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}
+
+function renderPlot() {
+  const rows = participants.filter((p) => Array.isArray(p.words) && p.words[selected] && p.words[selected].length);
+  const labels = rows.map((p) => p.words[selected].map(escapeHtml).join("<br>"));
+
+  const trace = {
+    type: "scatter",
+    mode: "markers+text",
+    x: rows.map((p) => p.e),
+    y: rows.map((p) => p.n),
+    text: labels,
+    customdata: rows.map((p, k) => [labels[k], p.e, p.n]),
+    textposition: "middle right",
+    textfont: { size: 15, color: "#111" },
+    marker: { size: 10, color: "#636efa", line: { width: 1, color: "#fff" } },
+    hovertemplate: "%{customdata[0]}<br><span style='color:#666'>E %{customdata[1]} · N %{customdata[2]}</span><extra></extra>",
+    cliponaxis: false
+  };
+
+  const layout = {
+    title: { text: `Image ${selected + 1}`, font: { size: 18 } },
+    autosize: true,
+    margin: { l: 60, r: 30, t: 50, b: 50 },
+    paper_bgcolor: "#ffffff",
+    plot_bgcolor: "#ffffff",
+    xaxis: { range: [0, AXIS_MAX], dtick: 8, title: { text: "E Score" }, showgrid: false, zeroline: false, fixedrange: true },
+    yaxis: { range: [0, AXIS_MAX], dtick: 8, title: { text: "N Score" }, showgrid: false, zeroline: false,
+             scaleanchor: "x", fixedrange: true },
+    shapes: checkerboard(),
+    hoverlabel: { bgcolor: "white", font: { size: 20, color: "black" }, bordercolor: "black", align: "left" }
+  };
+
+  Plotly.react("plot", [trace], layout, { responsive: true, displayModeBar: false });
+}
+
+// =========================================================================
+// Init
+// =========================================================================
+window.addEventListener("beforeunload", (event) => {
+  if (currentView === "run" && state && state.inProgress) {
+    event.preventDefault();
+    event.returnValue = "";
+  }
+});
+
+document.addEventListener("keydown", (ev) => {
+  if (currentView !== "results") return;
+  if (ev.key === "ArrowRight") select(selected + 1);
+  if (ev.key === "ArrowLeft") select(selected - 1);
+});
+
+$("goRunBtn").addEventListener("click", () => go("#run"));
+$("goResultsBtn").addEventListener("click", () => go("#results"));
+$("demoHomeBtn").addEventListener("click", () => go("#"));
+$("resultsHomeBtn").addEventListener("click", () => go("#"));
+$("seeResultsBtn").addEventListener("click", () => go("#results"));
+$("backHomeBtn").addEventListener("click", () => go("#"));
+
+$("age").addEventListener("input", validateDemo);
+$("gender").addEventListener("change", validateDemo);
+$("demoNextBtn").addEventListener("click", submitDemo);
+for (const id of ["scoreE", "scoreN", "scoreL"]) $(id).addEventListener("input", validateScores);
+$("mpiNextBtn").addEventListener("click", submitScores);
+$("beginImagesBtn").addEventListener("click", startImages);
+$("imageNextBtn").addEventListener("click", nextImage);
+$("submitBtn").addEventListener("click", submitAll);
+
+$("refreshBtn").addEventListener("click", refresh);
+$("autoRefresh").addEventListener("change", scheduleRefresh);
+
+(async () => {
+  const error = await loadConfig();
+  configOk = !error;
+  if (error) {
+    $("homeError").textContent = error;
+    $("goRunBtn").disabled = true;
+    $("goResultsBtn").disabled = true;
+    if (location.hash) history.replaceState(null, "", location.pathname + location.search);
+  }
+  route();
+})();
+</script>
+</body>
+</html>

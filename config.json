@@ -1,0 +1,18 @@
+{
+  "collect_url": "https://script.google.com/macros/s/AKfycbwwg4bgitMbR4aABlW59fRYtCnNRUIoj0oxEYMjXLqXrIijHe6NzXPef6kXntpxdu6m8A/exec",
+  "collect_token": "",
+  "mpi_url": "https://mpfranco10.github.io/mpikansei/",
+  "words_per_image": 3,
+  "results_refresh_seconds": 15,
+  "images": [
+    "images/Images-1.png",
+    "images/Images-2.png",
+    "images/Images-3.png",
+    "images/Images-4.png",
+    "images/Images-5.png",
+    "images/Images-6.png",
+    "images/Images-7.png",
+    "images/Images-8.png",
+    "images/Images-9.png"
+  ]
+}
